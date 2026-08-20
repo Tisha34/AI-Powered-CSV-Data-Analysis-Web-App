@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Data Analysis Tool</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <header>
+        <h1>AI Data Analysis Tool</h1>
+        <p class="subtitle">Upload a CSV · Data Quality Check · Auto EDA · Ask questions · Generate charts</p>
+    </header>
+
+    <main class="container">
+
+        <!-- ── SECTION 1: CSV Upload ── -->
+        <section class="card" id="upload-section">
+            <h2><span class="tag">01</span> Upload Your Data</h2>
+            <div class="upload-area">
+                <input type="file" id="csvFile" accept=".csv" hidden>
+                <button class="btn-outline" onclick="document.getElementById('csvFile').click()">
+                    Choose CSV File
+                </button>
+                <p class="hint" id="fileLabel">No file chosen</p>
+            </div>
+            <div id="upload-loading" class="loading" style="display:none;">Reading dataset...</div>
+            <div id="upload-error" class="error-msg" style="display:none;"></div>
+
+            <div id="dataset-summary" style="display:none;">
+                <div class="summary-grid" id="summaryGrid"></div>
+                <div class="preview-scroll">
+                    <table id="previewTable"></table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ── SECTION 2: Data Quality Scorecard ── -->
+        <section class="card" id="quality-section">
+            <h2><span class="tag">02</span> Data Quality Scorecard</h2>
+            <p class="hint">Scores your dataset 0-100 on completeness, duplicates, outliers, and type consistency. Gives specific cleaning recommendations.</p>
+            <button class="btn-primary" onclick="runDataQuality()">Run Quality Check</button>
+            <div id="quality-loading" class="loading" style="display:none;">Checking data quality...</div>
+            <div id="quality-error" class="error-msg" style="display:none;"></div>
+
+            <div id="quality-output" style="display:none;">
+
+                <!-- Score + Verdict -->
+                <div class="dq-score-wrap">
+                    <div class="dq-score-circle" id="dqScoreCircle">
+                        <span class="dq-score-num" id="dqScoreNum">0</span>
+                        <span class="dq-score-label">/ 100</span>
+                    </div>
+                    <div class="dq-verdict-wrap">
+                        <div class="dq-verdict" id="dqVerdict"></div>
+                        <p class="dq-verdict-detail" id="dqVerdictDetail"></p>
+                    </div>
+                </div>
+
+                <!-- Quick stats row -->
+                <div class="dq-stats-row" id="dqStatsRow"></div>
+
+                <!-- Issues found -->
+                <div id="dqIssuesWrap" style="display:none;">
+                    <h3 class="dq-section-title">Issues Found</h3>
+                    <div id="dqIssues"></div>
+                </div>
+
+                <!-- Missing values detail -->
+                <div id="dqMissingWrap" style="display:none;">
+                    <h3 class="dq-section-title">Missing Values by Column</h3>
+                    <div class="preview-scroll">
+                        <table id="dqMissingTable"></table>
+                    </div>
+                </div>
+
+                <!-- Outliers detail -->
+                <div id="dqOutliersWrap" style="display:none;">
+                    <h3 class="dq-section-title">Outliers by Column</h3>
+                    <div class="preview-scroll">
+                        <table id="dqOutliersTable"></table>
+                    </div>
+                </div>
+
+                <!-- AI Recommendations -->
+                <h3 class="dq-section-title">Cleaning Recommendations</h3>
+                <div class="dq-recommendations" id="dqRecommendations"></div>
+
+            </div>
+        </section>
+
+        <!-- ── SECTION 3: Auto EDA Report ── -->
+        <section class="card" id="eda-section">
+            <h2><span class="tag">03</span> Auto EDA Report</h2>
+            <p class="hint">One click generates a full exploratory analysis — missing values, outliers, correlations, skewness, and an AI-written insight narrative.</p>
+            <button class="btn-primary" onclick="runEDA()">Generate EDA Report</button>
+            <div id="eda-loading" class="loading" style="display:none;">Analysing dataset — this takes 10-15 seconds...</div>
+            <div id="eda-error" class="error-msg" style="display:none;"></div>
+
+            <div id="eda-output" style="display:none;">
+                <div class="eda-narrative" id="edaNarrative"></div>
+                <div class="eda-panels">
+                    <div class="eda-panel"><h3>Missing Values</h3><div id="edaMissing"></div></div>
+                    <div class="eda-panel"><h3>Outliers Detected</h3><div id="edaOutliers"></div></div>
+                    <div class="eda-panel"><h3>Top Correlations</h3><div id="edaCorr"></div></div>
+                </div>
+                <h3 style="margin:20px 0 10px;font-size:0.9rem;color:var(--text-muted);">Numeric Column Summary</h3>
+                <div class="preview-scroll">
+                    <table id="edaNumericTable"></table>
+                </div>
+                <div id="edaHeatmapWrap" style="margin-top:20px;display:none;">
+                    <h3 style="font-size:0.9rem;color:var(--text-muted);margin-bottom:10px;">Correlation Heatmap</h3>
+                    <img id="edaHeatmap" src="" alt="Correlation heatmap" style="max-width:100%;border-radius:8px;border:1px solid var(--border);">
+                </div>
+            </div>
+        </section>
+
+        <!-- ── SECTION 4: Ask Questions ── -->
+        <section class="card" id="ask-section">
+            <h2><span class="tag">04</span> Ask About Your Data</h2>
+            <p class="hint">Ask anything — with a CSV uploaded, answers are grounded in your actual data.</p>
+
+            <div class="chat-window" id="chatWindow">
+                <div class="chat-placeholder">Your conversation will appear here.</div>
+            </div>
+
+            <div class="input-row">
+                <input type="text" id="questionInput" placeholder="e.g. What is the average credit score of churned customers?" />
+                <button class="btn-primary" id="askBtn" onclick="askQuestion()">Ask</button>
+            </div>
+            <div id="ask-loading" class="loading" style="display:none;">Thinking...</div>
+            <div id="ask-error" class="error-msg" style="display:none;"></div>
+            <button class="btn-ghost" onclick="clearHistory()" style="margin-top:8px;">Clear conversation</button>
+        </section>
+
+        <!-- ── SECTION 5: Chart Generator ── -->
+        <section class="card" id="chart-section">
+            <h2><span class="tag">05</span> Generate a Chart</h2>
+            <p class="hint">Pick a suggested chart or type your own request below.</p>
+
+            <div id="chartSuggestions" style="display:none;">
+                <p class="chips-label">Suggested charts for your data:</p>
+                <div class="chips-loading" id="chipsLoading">Generating suggestions...</div>
+                <div class="chips-wrap" id="chipsWrap"></div>
+            </div>
+
+            <div class="input-row" style="margin-top:12px;">
+                <input type="text" id="chartInput" placeholder="Or type your own: Bar chart of sales by region..." />
+                <button class="btn-primary" onclick="generateChart()">Generate</button>
+            </div>
+            <div id="chart-loading" class="loading" style="display:none;">Building chart...</div>
+            <div id="chart-error" class="error-msg" style="display:none;"></div>
+            <div id="chartOutput" style="display:none;">
+                <img id="chartImage" src="" alt="Generated chart" />
+            </div>
+        </section>
+
+    </main>
+
+<script>
+// ── CSV Upload ──────────────────────────────────────────────
+document.getElementById("csvFile").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    document.getElementById("fileLabel").textContent = file.name;
+    showLoading("upload-loading");
+    hideError("upload-error");
+    document.getElementById("dataset-summary").style.display = "none";
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+        const res = await fetch("/upload", { method: "POST", body: formData });
+        const data = await res.json();
+
+        hideLoading("upload-loading");
+
+        if (!res.ok || data.error) {
+            showError("upload-error", data.error || "Upload failed.");
+            return;
+        }
+
+        renderSummary(data.summary);
+        loadChartSuggestions();
+
+    } catch (err) {
+        hideLoading("upload-loading");
+        showError("upload-error", "Network error. Please try again.");
+    }
+});
+
+function renderSummary(s) {
+    const grid = document.getElementById("summaryGrid");
+    grid.innerHTML = `
+        <div class="stat-card"><span class="stat-num">${s.rows.toLocaleString()}</span><span class="stat-label">Rows</span></div>
+        <div class="stat-card"><span class="stat-num">${s.columns}</span><span class="stat-label">Columns</span></div>
+        <div class="stat-card"><span class="stat-num">${Object.values(s.null_counts).reduce((a, b) => a + b, 0)}</span><span class="stat-label">Missing Values</span></div>
+        <div class="stat-card"><span class="stat-num">${s.column_names.length}</span><span class="stat-label">Features</span></div>
+    `;
+
+    const table = document.getElementById("previewTable");
+    if (s.preview.length === 0) {
+        table.innerHTML = "<tr><td>No data</td></tr>";
+    } else {
+        const cols = Object.keys(s.preview[0]);
+        let html = "<thead><tr>" + cols.map(c => `<th>${c}</th>`).join("") + "</tr></thead><tbody>";
+        s.preview.forEach(row => {
+            html += "<tr>" + cols.map(c => `<td>${row[c] ?? ""}</td>`).join("") + "</tr>";
+        });
+        html += "</tbody>";
+        table.innerHTML = html;
+    }
+
+    document.getElementById("dataset-summary").style.display = "block";
+}
+
+// ── Data Quality Scorecard ──────────────────────────────────
+async function runDataQuality() {
+    showLoading("quality-loading");
+    hideError("quality-error");
+    document.getElementById("quality-output").style.display = "none";
+
+    try {
+        const res = await fetch("/data-quality", { method: "POST" });
+        const data = await res.json();
+
+        hideLoading("quality-loading");
+
+        if (!res.ok || data.error) {
+            showError("quality-error", data.error || "Quality check failed.");
+            return;
+        }
+
+        const r = data.result;
+
+        // Score circle
+        const circle = document.getElementById("dqScoreCircle");
+        document.getElementById("dqScoreNum").textContent = r.score;
+        circle.className = "dq-score-circle dq-score-" + r.verdict_color;
+
+        // Verdict
+        const verdictEl = document.getElementById("dqVerdict");
+        verdictEl.textContent = r.verdict.toUpperCase();
+        verdictEl.className = "dq-verdict dq-verdict-" + r.verdict_color;
+        document.getElementById("dqVerdictDetail").textContent = r.verdict_detail;
+
+        // Quick stats row
+        document.getElementById("dqStatsRow").innerHTML = `
+            <div class="dq-stat"><span class="dq-stat-num">${r.summary.missing_pct}%</span><span class="dq-stat-label">Missing</span></div>
+            <div class="dq-stat"><span class="dq-stat-num">${r.summary.duplicate_pct}%</span><span class="dq-stat-label">Duplicates</span></div>
+            <div class="dq-stat"><span class="dq-stat-num">${r.summary.outlier_columns}</span><span class="dq-stat-label">Outlier Cols</span></div>
+            <div class="dq-stat"><span class="dq-stat-num">${r.mixed_cols.length}</span><span class="dq-stat-label">Type Issues</span></div>
+        `;
+
+        // Issues list
+        if (r.issues.length > 0) {
+            document.getElementById("dqIssues").innerHTML = r.issues.map(i =>
+                `<div class="dq-issue"><span class="dq-issue-dot"></span>${i}</div>`
+            ).join("");
+            document.getElementById("dqIssuesWrap").style.display = "block";
+        } else {
+            document.getElementById("dqIssuesWrap").style.display = "none";
+        }
+
+        // Missing values table
+        if (r.missing_cols.length > 0) {
+            let html = `<thead><tr><th>Column</th><th>Missing</th><th>%</th><th>Recommendation</th></tr></thead><tbody>`;
+            r.missing_cols.forEach(m => {
+                html += `<tr><td>${m.column}</td><td>${m.missing}</td><td>${m.pct}%</td><td>${m.recommendation}</td></tr>`;
+            });
+            html += "</tbody>";
+            document.getElementById("dqMissingTable").innerHTML = html;
+            document.getElementById("dqMissingWrap").style.display = "block";
+        } else {
+            document.getElementById("dqMissingWrap").style.display = "none";
+        }
+
+        // Outliers table
+        if (r.outlier_cols.length > 0) {
+            let html = `<thead><tr><th>Column</th><th>Outliers</th><th>%</th><th>Recommendation</th></tr></thead><tbody>`;
+            r.outlier_cols.forEach(o => {
+                html += `<tr><td>${o.column}</td><td>${o.count}</td><td>${o.pct}%</td><td>${o.recommendation}</td></tr>`;
+            });
+            html += "</tbody>";
+            document.getElementById("dqOutliersTable").innerHTML = html;
+            document.getElementById("dqOutliersWrap").style.display = "block";
+        } else {
+            document.getElementById("dqOutliersWrap").style.display = "none";
+        }
+
+        // Recommendations
+        document.getElementById("dqRecommendations").textContent = r.recommendations;
+
+        document.getElementById("quality-output").style.display = "block";
+
+    } catch (err) {
+        hideLoading("quality-loading");
+        showError("quality-error", "Network error. Please try again.");
+    }
+}
+
+// ── Ask Question ────────────────────────────────────────────
+async function askQuestion() {
+    const input = document.getElementById("questionInput");
+    const question = input.value.trim();
+    if (!question) return;
+
+    appendChat("user", question);
+    input.value = "";
+
+    showLoading("ask-loading");
+    hideError("ask-error");
+    document.getElementById("askBtn").disabled = true;
+
+    const formData = new FormData();
+    formData.append("question", question);
+
+    try {
+        const res = await fetch("/ask", { method: "POST", body: formData });
+        const data = await res.json();
+
+        hideLoading("ask-loading");
+        document.getElementById("askBtn").disabled = false;
+
+        if (!res.ok || data.error) {
+            showError("ask-error", data.error || "Something went wrong.");
+            return;
+        }
+
+        appendChat("assistant", data.response);
+
+    } catch (err) {
+        hideLoading("ask-loading");
+        document.getElementById("askBtn").disabled = false;
+        showError("ask-error", "Network error. Please try again.");
+    }
+}
+
+document.getElementById("questionInput").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") askQuestion();
+});
+
+function appendChat(role, text) {
+    const win = document.getElementById("chatWindow");
+    const placeholder = win.querySelector(".chat-placeholder");
+    if (placeholder) placeholder.remove();
+
+    const bubble = document.createElement("div");
+    bubble.className = `chat-bubble ${role}`;
+    bubble.textContent = text;
+    win.appendChild(bubble);
+    win.scrollTop = win.scrollHeight;
+}
+
+async function clearHistory() {
+    await fetch("/clear", { method: "POST" });
+    const chatWindow = document.getElementById("chatWindow");
+    chatWindow.innerHTML = '<div class="chat-placeholder">Your conversation will appear here.</div>';
+}
+
+// ── Chart Suggestions ───────────────────────────────────────
+async function loadChartSuggestions() {
+    const suggestionsBox = document.getElementById("chartSuggestions");
+    const chipsLoading = document.getElementById("chipsLoading");
+    const chipsWrap = document.getElementById("chipsWrap");
+
+    suggestionsBox.style.display = "block";
+    chipsLoading.style.display = "block";
+    chipsWrap.innerHTML = "";
+
+    try {
+        const res = await fetch("/suggest-charts", { method: "POST" });
+        const data = await res.json();
+
+        chipsLoading.style.display = "none";
+
+        if (!res.ok || data.error || !data.suggestions) {
+            chipsWrap.innerHTML = '<p class="hint">Could not load suggestions.</p>';
+            return;
+        }
+
+        chipsWrap.innerHTML = data.suggestions.map(s =>
+            `<button class="chip" onclick="selectChip(this, '${s.replace(/'/g, "\\'")}')">${s}</button>`
+        ).join("");
+
+    } catch (err) {
+        chipsLoading.style.display = "none";
+        chipsWrap.innerHTML = '<p class="hint">Could not load suggestions.</p>';
+    }
+}
+
+function selectChip(btn, suggestion) {
+    document.querySelectorAll(".chip").forEach(c => c.classList.remove("chip-active"));
+    btn.classList.add("chip-active");
+    document.getElementById("chartInput").value = suggestion;
+    generateChart();
+}
+
+// ── Chart Generator ─────────────────────────────────────────
+async function generateChart() {
+    const request = document.getElementById("chartInput").value.trim();
+    if (!request) return;
+
+    showLoading("chart-loading");
+    hideError("chart-error");
+    document.getElementById("chartOutput").style.display = "none";
+
+    const formData = new FormData();
+    formData.append("chart_request", request);
+
+    try {
+        const res = await fetch("/chart", { method: "POST", body: formData });
+        const data = await res.json();
+
+        hideLoading("chart-loading");
+
+        if (!res.ok || data.error) {
+            showError("chart-error", data.error || "Chart generation failed.");
+            return;
+        }
+
+        document.getElementById("chartImage").src = "data:image/png;base64," + data.chart;
+        document.getElementById("chartOutput").style.display = "block";
+
+    } catch (err) {
+        hideLoading("chart-loading");
+        showError("chart-error", "Network error. Please try again.");
+    }
+}
+
+// ── Auto EDA ────────────────────────────────────────────────
+async function runEDA() {
+    showLoading("eda-loading");
+    hideError("eda-error");
+    document.getElementById("eda-output").style.display = "none";
+
+    try {
+        const res = await fetch("/eda", { method: "POST" });
+        const data = await res.json();
+
+        hideLoading("eda-loading");
+
+        if (!res.ok || data.error) {
+            showError("eda-error", data.error || "EDA failed.");
+            return;
+        }
+
+        const r = data.report;
+
+        document.getElementById("edaNarrative").textContent = r.narrative;
+
+        const miss = document.getElementById("edaMissing");
+        if (r.missing.length === 0) {
+            miss.innerHTML = '<p class="eda-good">No missing values</p>';
+        } else {
+            miss.innerHTML = r.missing.map(m =>
+                `<div class="eda-row"><span>${m.column}</span><span class="eda-badge warn">${m.missing} (${m.pct}%)</span></div>`
+            ).join("");
+        }
+
+        const out = document.getElementById("edaOutliers");
+        if (r.outliers.length === 0) {
+            out.innerHTML = '<p class="eda-good">No significant outliers</p>';
+        } else {
+            out.innerHTML = r.outliers.map(o =>
+                `<div class="eda-row"><span>${o.column}</span><span class="eda-badge warn">${o.outlier_count} (${o.pct}%)</span></div>`
+            ).join("");
+        }
+
+        const corr = document.getElementById("edaCorr");
+        if (r.top_correlations.length === 0) {
+            corr.innerHTML = '<p class="eda-good">Not enough numeric columns</p>';
+        } else {
+            corr.innerHTML = r.top_correlations.map(c =>
+                `<div class="eda-row"><span>${c.col1} & ${c.col2}</span><span class="eda-badge ${Math.abs(c.correlation) > 0.7 ? 'strong' : 'mid'}">${c.correlation}</span></div>`
+            ).join("");
+        }
+
+        const thead = `<thead><tr><th>Column</th><th>Mean</th><th>Median</th><th>Std</th><th>Min</th><th>Max</th><th>Skew</th></tr></thead>`;
+        const tbody = "<tbody>" + r.numeric_stats.map(s =>
+            `<tr>
+                <td>${s.column}</td>
+                <td>${s.mean}</td>
+                <td>${s.median}</td>
+                <td>${s.std}</td>
+                <td>${s.min}</td>
+                <td>${s.max}</td>
+                <td><span class="eda-badge ${s.skew_flag === 'normal' ? 'good' : 'warn'}">${s.skew_flag}</span></td>
+            </tr>`
+        ).join("") + "</tbody>";
+        document.getElementById("edaNumericTable").innerHTML = thead + tbody;
+
+        if (r.heatmap) {
+            document.getElementById("edaHeatmap").src = "data:image/png;base64," + r.heatmap;
+            document.getElementById("edaHeatmapWrap").style.display = "block";
+        }
+
+        document.getElementById("eda-output").style.display = "block";
+
+    } catch (err) {
+        hideLoading("eda-loading");
+        showError("eda-error", "Network error. Please try again.");
+    }
+}
+
+// ── Utility helpers ─────────────────────────────────────────
+function showLoading(id) { document.getElementById(id).style.display = "block"; }
+function hideLoading(id) { document.getElementById(id).style.display = "none"; }
+function showError(id, msg) {
+    const el = document.getElementById(id);
+    el.textContent = msg;
+    el.style.display = "block";
+}
+function hideError(id) {
+    const el = document.getElementById(id);
+    el.textContent = "";
+    el.style.display = "none";
+}
+</script>
+
+</body>
+</html>
