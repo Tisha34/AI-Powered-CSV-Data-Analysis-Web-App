@@ -6,7 +6,11 @@ a CSV and everything runs in the browser.
 
 ## Demo
 
-https://github.com/Tisha34/AI-Powered-CSV-Data-Analysis-Web-App/assets/GITHUB_ASSET_ID/demo.mp4
+
+
+https://github.com/user-attachments/assets/ead61987-8d97-4b0c-b133-5c2a370811a8
+
+
 
 ---
 
