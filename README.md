@@ -12,8 +12,6 @@ browser. Backed by **LLaMA 3.3 70B via Groq API**.
 ![Pandas](https://img.shields.io/badge/Pandas-2.x-150458?style=flat&logo=pandas)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat)
 
-> 🔗 **Live Demo:** [Add deployed URL here]
-
 ---
 
 ## Demo
