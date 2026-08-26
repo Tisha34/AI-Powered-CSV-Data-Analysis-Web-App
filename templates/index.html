@@ -226,7 +226,7 @@ async function runDataQuality() {
     try {
         const res = await fetch("/data-quality", { method: "POST" });
         const data = await res.json();
-
+        
         hideLoading("quality-loading");
 
         if (!res.ok || data.error) {
@@ -321,6 +321,7 @@ async function askQuestion() {
     try {
         const res = await fetch("/ask", { method: "POST", body: formData });
         const data = await res.json();
+        
 
         hideLoading("ask-loading");
         document.getElementById("askBtn").disabled = false;

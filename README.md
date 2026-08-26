@@ -1,12 +1,25 @@
+
 # AI-Powered CSV Data Analysis Web App
 
-EDA in Jupyter gets old fast. This app does the grunt work — data quality
-check, exploratory analysis, AI-powered Q&A, and chart generation — upload
-a CSV and everything runs in the browser.
+Jupyter EDA is slow. This app skips the notebook entirely — upload a CSV and
+get a data quality score, an EDA report, plain-English Q&A, and charts in the
+browser. Backed by **LLaMA 3.3 70B via Groq API**.
+
+![Python](https://img.shields.io/badge/Python-3.10+-blue?style=flat&logo=python)
+![Flask](https://img.shields.io/badge/Flask-2.x-black?style=flat&logo=flask)
+![LLaMA](https://img.shields.io/badge/LLaMA-3.3_70B-orange?style=flat)
+![Groq](https://img.shields.io/badge/Groq-API-red?style=flat)
+![Pandas](https://img.shields.io/badge/Pandas-2.x-150458?style=flat&logo=pandas)
+![License](https://img.shields.io/badge/License-MIT-green?style=flat)
+
+> 🔗 **Live Demo:** [Add deployed URL here]
+
+---
 
 ## Demo
 
-https://github.com/Tisha34/AI-Powered-CSV-Data-Analysis-Web-App/assets/GITHUB_ASSET_ID/demo.mp4
+<!-- Replace with your actual GitHub-hosted demo.mp4 asset link -->
+https://github.com/Tisha34/AI-Powered-CSV-Data-Analysis-Web-App/assets/222008937/demo.mp4
 
 ---
 
@@ -30,28 +43,33 @@ https://github.com/Tisha34/AI-Powered-CSV-Data-Analysis-Web-App/assets/GITHUB_AS
 ## What it does
 
 **Data Quality Check**
-Scores your dataset from 0 to 100. Catches missing values, duplicate rows,
-outliers by column, and type mismatches. Tells you what to fix and how.
+Scores the dataset from 0 to 100. Catches missing values, duplicate rows,
+per-column outliers, and type mismatches — with notes on what to fix.
 
 **Auto EDA**
-One click. You get a written summary of the key findings, a correlation
-heatmap, skewness flags, and a full numeric column breakdown. Takes about
-15 seconds.
+One click. Produces a written summary of key findings, a correlation heatmap,
+skewness flags, and a numeric column breakdown. Takes about 15 seconds.
 
 **Ask Your Data**
-Type a question in plain English — "what is the average balance of customers
-who churned?" — and get a direct answer based on your actual data, not
-generic advice.
+Type a question in plain English — *"what is the average balance of customers
+who churned?"* — and get an answer pulled from your actual data. Follow-up
+questions stay in context, so you don't need to re-upload between questions.
 
 **Chart Generator**
-Describe what you want. The app writes the code and renders the chart.
-Download it as a PNG.
+Describe the chart. LLaMA 3.3 70B writes the matplotlib code, the app renders
+it, and you download a PNG.
 
 ---
 
 ## Stack
 
-Python, Flask, Pandas, NumPy, Matplotlib, Groq API, plain HTML/CSS/JS.
+| Layer | Technology |
+|---|---|
+| Backend | Python, Flask |
+| AI Model | LLaMA 3.3 70B via Groq API |
+| Data Processing | Pandas, NumPy |
+| Visualisation | Matplotlib |
+| Frontend | HTML, CSS, JavaScript |
 
 ---
 
@@ -63,15 +81,13 @@ cd AI-Powered-CSV-Data-Analysis-Web-App
 pip install -r requirements.txt
 ```
 
-Create a `.env` file with your Groq API key:
+Create a `.env` file:
 
 ```
 GROQ_API_KEY=your_key_here
 ```
 
 Free key at https://console.groq.com
-
-Then:
 
 ```bash
 python app.py
@@ -83,8 +99,8 @@ Open `http://127.0.0.1:5000` and upload any CSV.
 
 ## Tested with
 
-The Churn Modelling dataset (10,000 rows, 14 columns). Works with any
-well-structured CSV — sales data, HR data, finance data, whatever you have.
+Churn Modelling dataset — 10,000 rows, 14 columns. Should work with any
+well-structured CSV.
 
 ---
 

@@ -181,6 +181,8 @@ Rules:
         return jsonify({"suggestions": suggestions}), 200
 
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": f"Could not generate suggestions: {str(e)}"}), 500
 
 
@@ -212,40 +214,63 @@ RULES:
 3. Do NOT import anything — pandas and matplotlib are already imported
 4. Do NOT include comments, markdown, explanation, or backticks
 5. Always close ALL parentheses, brackets, and braces before the code ends
-6. For grouped comparisons like "exited and stayed by gender" or "churn by category":
-   - Use grouped bar charts with ax.bar() called multiple times with different x offsets
-   - Example for two groups:
-     x = np.arange(len(categories))
-     ax.bar(x - 0.2, values1, width=0.4, label='Group1', color='#a8d8ea')
-     ax.bar(x + 0.2, values2, width=0.4, label='Group2', color='#f9c8d4')
-     ax.set_xticks(x)
-     ax.set_xticklabels(categories)
-     ax.legend()
+6. For grouped comparisons such as "exited and stayed by gender":
+   - Create the category values from the actual dataframe.
+   - Explicitly define x before using it.
+   - Explicitly define bar_width before using it.
+   - Define both data series before calling ax.bar().
+   - Use bar_width consistently for both bar positions and the width parameter.
+   - Never use a variable before defining it.
 7. For single category bar charts, color each bar differently:
    colors = ['#a8d8ea', '#f9c8d4', '#b8e0d2', '#ffd3a3', '#c9b8e8', '#ffe0a3']
    bars = ax.bar(x_values, y_values, color=colors[:len(x_values)])
 8. Always add: ax.set_title('...'), ax.set_xlabel('...'), ax.set_ylabel('...')
 9. If the request is unclear, make a reasonable interpretation using actual column names
 10. End with plt.tight_layout()
+11. Before returning the code, mentally verify that every opening parenthesis and bracket has a matching closing character.
+12. The generated code MUST be syntactically valid Python.
+13. Do not split a function call across lines unless all parentheses are correctly closed.
+14. Do not return incomplete statements.
+15. For every pandas method chain such as .reindex(), .groupby(), and .agg(), verify that every function call is correctly closed.
+16. Review the complete code once before returning it and fix any SyntaxError.
+17. Every variable used in the generated code MUST be defined before it is used.
+18. Never use undefined variables such as width, height, x, y, categories, values1, or values2.
+19. For grouped bar charts, explicitly define all variables such as x and width before using them.
+20. Before returning the code, check every variable name and ensure it has been assigned a value.
 """
 
     try:
         code_response = client.chat.completions.create(
             model=MODEL,
-            max_tokens=600,
+            max_tokens=1200,
             messages=[
                 {"role": "system", "content": "You are a Python data visualization expert. Output only raw executable Python code, nothing else."},
                 {"role": "user", "content": code_prompt}
             ]
         )
 
-        code = code_response.choices[0].message.content.strip()
+        message = code_response.choices[0].message
+
+        print("\n===== GROQ RESPONSE =====")
+        print("Content:", repr(message.content))
+        print("Finish reason:", code_response.choices[0].finish_reason)
+        print("===== END GROQ RESPONSE =====\n")
+
+
+        code = (message.content or "").strip()
+
+        print("\n===== GENERATED CHART CODE =====")
+        print(code)
+        print("===== END GENERATED CODE =====\n")
+
+        if not code:
+            raise ValueError("Groq returned empty chart code")
         if code.startswith("```"):
             code = "\n".join(code.split("\n")[1:])
         if code.endswith("```"):
             code = "\n".join(code.split("\n")[:-1])
 
-        local_scope = {"df": uploaded_df, "plt": plt, "pd": pd}
+        local_scope = {"df": uploaded_df, "plt": plt, "pd": pd, "np":np}
         plt.rcParams.update({
             'figure.facecolor': '#1a1d27',
             'axes.facecolor': '#1a1d27',
@@ -261,7 +286,7 @@ RULES:
                 '#ffd3a3', '#c9b8e8', '#ffe0a3'
             ])
         })
-        exec(code, {}, local_scope)
+        exec(code, local_scope, local_scope)
 
         buf = io.BytesIO()
         plt.savefig(buf, format="png", bbox_inches="tight", dpi=120)
@@ -272,9 +297,10 @@ RULES:
         return jsonify({"chart": img_base64}), 200
 
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         plt.close("all")
         return jsonify({"error": f"Chart generation failed: {str(e)}"}), 500
-
 
 # ─────────────────────────────────────────────
 # ROUTE: Data Quality Scorecard
