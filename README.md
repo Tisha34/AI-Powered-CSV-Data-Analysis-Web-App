@@ -12,14 +12,15 @@ browser. Backed by **LLaMA 3.3 70B via Groq API**.
 ![Pandas](https://img.shields.io/badge/Pandas-2.x-150458?style=flat&logo=pandas)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat)
 
-> 🔗 **Live Demo:** [Add deployed URL here]
-
 ---
 
 ## Demo
 
-<!-- Replace with your actual GitHub-hosted demo.mp4 asset link -->
-https://github.com/Tisha34/AI-Powered-CSV-Data-Analysis-Web-App/assets/222008937/demo.mp4
+
+
+https://github.com/user-attachments/assets/73ea83a8-9301-4a0c-90b9-b75428b173c5
+
+
 
 ---
 
